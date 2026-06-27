@@ -20,7 +20,7 @@ fn definitely_open(_: *const c_char, _: c_int) -> c_int {
   fd
 }
 
-#[ctor::ctor]
+#[ctor::ctor(unsafe)]
 fn main() {
   unsafe {
     Opentour.initialize(open, definitely_open).unwrap();
