@@ -7,8 +7,8 @@ use std::mem::size_of;
 use std::os::raw::c_void;
 use std::ptr::null;
 
-use windows::core::{Interface, HRESULT, HSTRING, PCWSTR};
-use windows::Win32::Foundation::{GetLastError, BOOL, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
+use windows::core::{w, Interface, BOOL, HRESULT, PCWSTR};
+use windows::Win32::Foundation::{GetLastError, HINSTANCE, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Direct3D::*;
 use windows::Win32::Graphics::Direct3D11::*;
 use windows::Win32::Graphics::Dxgi::Common::*;
@@ -22,11 +22,11 @@ use windows::Win32::UI::WindowsAndMessaging::*;
 use retour::static_detour;
 
 static_detour! {
-    static PresentHook:  unsafe extern "system" fn(*mut c_void, u32, u32) -> HRESULT;
+    static PresentHook:  unsafe extern "system" fn(*mut core::ffi::c_void, u32, DXGI_PRESENT) -> HRESULT;
 }
 
 #[allow(non_snake_case)]
-fn present(This: *mut c_void, SyncInterval: u32, Flags: u32) -> HRESULT {
+fn present(This: *mut c_void, SyncInterval: u32, Flags: DXGI_PRESENT) -> HRESULT {
   println!("present");
   unsafe { PresentHook.call(This, SyncInterval, Flags) }
 }
@@ -35,17 +35,17 @@ fn present(This: *mut c_void, SyncInterval: u32, Flags: u32) -> HRESULT {
 #[allow(non_snake_case)]
 pub extern "system" fn DllMain(module: HMODULE, call_reason: u32, _reserved: *mut c_void) -> BOOL {
   unsafe {
-    DisableThreadLibraryCalls(module);
+    DisableThreadLibraryCalls(module).unwrap();
   }
 
   if call_reason == DLL_PROCESS_ATTACH {
     unsafe {
-      AllocConsole();
+      AllocConsole().unwrap();
     }
 
     std::thread::spawn(|| unsafe {
       match crate::main() {
-        Ok(()) => 0 as u32,
+        Ok(()) => 0u32,
         Err(e) => {
           println!("Error occurred when injecting: {}", e);
           1
@@ -78,19 +78,18 @@ unsafe fn main() -> Result<(), Box<dyn Error>> {
 }
 
 unsafe fn get_render_window() -> (WNDCLASSEXW, HWND) {
-  let window_class_name = HSTRING::from("DxHookWindowClass");
   let window_class = WNDCLASSEXW {
     cbSize: size_of::<WNDCLASSEXW>() as u32,
     style: CS_HREDRAW | CS_VREDRAW,
     lpfnWndProc: Some(window_proc),
     cbClsExtra: 0,
     cbWndExtra: 0,
-    hInstance: GetModuleHandleW(None).unwrap(),
+    hInstance: HINSTANCE::from(GetModuleHandleW(None).unwrap()),
     hIcon: HICON::default(),
     hCursor: HCURSOR::default(),
     hbrBackground: HBRUSH::default(),
     lpszMenuName: PCWSTR(null()),
-    lpszClassName: PCWSTR(window_class_name.as_wide().as_ptr()),
+    lpszClassName: w!("DxHookWindowClass"),
     hIconSm: HICON::default(),
   };
 
@@ -99,17 +98,18 @@ unsafe fn get_render_window() -> (WNDCLASSEXW, HWND) {
   let hwnd = CreateWindowExW(
     WINDOW_EX_STYLE::default(),
     window_class.lpszClassName,
-    PCWSTR(HSTRING::from("DxHookWindowClass").as_wide().as_ptr()),
+    w!("DxHookWindowClass"),
     WS_OVERLAPPEDWINDOW,
     0,
     0,
     100,
     100,
-    HWND::default(),
-    HMENU::default(),
-    window_class.hInstance,
     None,
-  );
+    None,
+    Some(window_class.hInstance),
+    None,
+  )
+  .unwrap();
 
   (window_class, hwnd)
 }
@@ -165,15 +165,19 @@ unsafe fn get_d3d11_vtables() -> *const IDXGISwapChain_Vtbl {
   let swapchain = out_swapchain.unwrap();
   let swapchain_vtbl: &IDXGISwapChain_Vtbl = swapchain.vtable();
 
-  if !CloseWindow(hwnd).as_bool() {
+  if CloseWindow(hwnd).is_err() {
     println!("Failed to close window. Error: {:?}", GetLastError());
   }
-  if !DestroyWindow(hwnd).as_bool() {
+  if DestroyWindow(hwnd).is_err() {
     println!("Failed to destroy window. Error: {:?}", GetLastError());
   }
-  // Needs fresh pointer to class name (else error 1411) + call DestroyWindow first (else error 1412)
-  if !UnregisterClassW(PCWSTR(HSTRING::from("DxHookWindowClass").as_wide().as_ptr()), window_class.hInstance).as_bool() {
-    println!("Failed to unregister window class. Error: {:?}", GetLastError());
+  // Needs fresh pointer to class name (else error 1411) + call DestroyWindow
+  // first (else error 1412)
+  if UnregisterClassW(w!("DxHookWindowClass"), Some(window_class.hInstance)).is_err() {
+    println!(
+      "Failed to unregister window class. Error: {:?}",
+      GetLastError()
+    );
   }
 
   swapchain_vtbl

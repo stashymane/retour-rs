@@ -7,9 +7,8 @@ use std::error::Error;
 use std::ffi::c_int;
 use std::os::raw::c_void;
 use std::{ffi::CString, iter, mem};
-use windows::core::{PCSTR, PCWSTR};
-use windows::w;
-use windows::Win32::Foundation::{BOOL, HANDLE, HWND};
+use windows::core::{w, BOOL, PCSTR, PCWSTR};
+use windows::Win32::Foundation::{HANDLE, HWND};
 use windows::Win32::System::LibraryLoader::{GetModuleHandleW, GetProcAddress};
 use windows::Win32::System::SystemServices::{
   DLL_PROCESS_ATTACH, DLL_PROCESS_DETACH, DLL_THREAD_ATTACH, DLL_THREAD_DETACH,

@@ -6,9 +6,9 @@ use std::{ffi::CStr, os::raw::c_void};
 use once_cell::sync::Lazy;
 use retour::GenericDetour;
 use windows::{
-  core::PCSTR,
+  core::{BOOL, PCSTR},
   Win32::{
-    Foundation::{BOOL, HANDLE, HMODULE},
+    Foundation::{HANDLE, HMODULE},
     System::{
       LibraryLoader::{GetProcAddress, LoadLibraryA},
       SystemServices::{
@@ -33,7 +33,7 @@ extern "system" fn our_LoadLibraryA(lpFileName: PCSTR) -> HMODULE {
   let ret_val = hook_LoadLibraryA.call(lpFileName);
   println!(
     "our_LoadLibraryA lpFileName = {:?} ret_val = {:#X}",
-    file_name, ret_val.0
+    file_name, ret_val.0 as usize
   );
   unsafe { hook_LoadLibraryA.enable().unwrap() };
   return ret_val;
