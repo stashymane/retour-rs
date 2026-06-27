@@ -181,7 +181,7 @@ mod relative_ip {
     safe fn check_value() -> bool;
   }
 
-  extern fn new_check_value() -> bool {
+  extern "C" fn new_check_value() -> bool {
     true
   }
 

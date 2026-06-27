@@ -4,7 +4,6 @@ use crate::error::{Error, Result};
 use crate::pic;
 use crate::util::BITNESS;
 use iced_x86::{Decoder, DecoderOptions, Instruction, OpKind};
-use std::ptr::slice_from_raw_parts;
 use std::{mem, slice};
 
 pub mod disasm;
