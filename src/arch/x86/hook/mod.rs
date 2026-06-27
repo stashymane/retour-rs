@@ -87,15 +87,20 @@ impl Builder {
       emitter.add_thunk(inst);
     }
 
-    // save registers and align sp
+    // save flags and registers, then align sp
     #[cfg(target_arch = "x86_64")]
     {
+      emitter.add_thunk(thunk::x64::pushfq());
       emitter.add_thunk(thunk::x64::push_all_regs());
       emitter.add_thunk(thunk::x64::mov_reg_extended(Register::sp, Register::bp));
       emitter.add_thunk(thunk::x64::and_reg_i32_extended(Register::sp, -16));
+      // Windows x64 ABI requires 32 bytes of shadow space before any call
+      #[cfg(target_os = "windows")]
+      emitter.add_thunk(thunk::x64::sub_reg_i32_extended(Register::sp, 32));
     }
     #[cfg(target_arch = "x86")]
     {
+      emitter.add_thunk(thunk::x86::pushfd());
       emitter.add_thunk(thunk::x86::push_all_regs());
       emitter.add_thunk(thunk::x86::mov_reg(Register::sp, Register::bp));
       emitter.add_thunk(thunk::x86::and_reg_i32(Register::sp, -16));
@@ -104,16 +109,21 @@ impl Builder {
     // actually call hook
     emitter.add_thunk(thunk::call(self.hook as usize));
 
-    // restore sp
+    // restore sp, registers, then flags
     #[cfg(target_arch = "x86_64")]
     {
+      // Remove shadow space reserved for Windows x64 ABI
+      #[cfg(target_os = "windows")]
+      emitter.add_thunk(thunk::x64::add_reg_i32_extended(Register::sp, 32));
       emitter.add_thunk(thunk::x64::mov_reg_extended(Register::bp, Register::sp));
       emitter.add_thunk(thunk::x64::pop_all_regs());
+      emitter.add_thunk(thunk::x64::popfq());
     }
     #[cfg(target_arch = "x86")]
     {
       emitter.add_thunk(thunk::x86::mov_reg(Register::bp, Register::sp));
       emitter.add_thunk(thunk::x86::pop_all_regs());
+      emitter.add_thunk(thunk::x86::popfd());
     }
 
     if !self.original_first {

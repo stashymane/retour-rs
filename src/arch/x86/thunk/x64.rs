@@ -104,6 +104,42 @@ pub fn and_reg_i32_extended(register: Register, imm: i32) -> Box<dyn Thunkable> 
   Box::new(bytes)
 }
 
+pub fn pushfq() -> Box<dyn Thunkable> {
+  Box::new(vec![0x9C_u8])
+}
+
+pub fn popfq() -> Box<dyn Thunkable> {
+  Box::new(vec![0x9D_u8])
+}
+
+pub fn sub_reg_i32_extended(register: Register, imm: i32) -> Box<dyn Thunkable> {
+  let rex = 0x48;
+  let opcode = 0x81;
+  let register = register as u8;
+  let m = 0b11 << 6;
+  let reg = 0b101 << 3;
+  let mod_r_m = m | reg | register;
+  let imm = imm.to_le_bytes();
+
+  let mut bytes = vec![rex, opcode, mod_r_m];
+  bytes.extend_from_slice(&imm);
+  Box::new(bytes)
+}
+
+pub fn add_reg_i32_extended(register: Register, imm: i32) -> Box<dyn Thunkable> {
+  let rex = 0x48;
+  let opcode = 0x81;
+  let register = register as u8;
+  let m = 0b11 << 6;
+  let reg = 0b000 << 3;
+  let mod_r_m = m | reg | register;
+  let imm = imm.to_le_bytes();
+
+  let mut bytes = vec![rex, opcode, mod_r_m];
+  bytes.extend_from_slice(&imm);
+  Box::new(bytes)
+}
+
 pub fn push_all_regs() -> Box<dyn Thunkable> {
   use iced_x86::code_asm::*;
   let mut builder = CodeAssembler::new(64).unwrap();

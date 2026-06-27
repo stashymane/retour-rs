@@ -14,17 +14,17 @@ impl RawMidFuncHook {
     MidFuncHook::new(target, hook, original_first).map(RawMidFuncHook)
   }
 
-  /// Enables the detour.
+  /// Enables the hook.
   pub unsafe fn enable(&self) -> Result<()> {
     self.0.enable()
   }
 
-  /// Disables the detour.
+  /// Disables the hook.
   pub unsafe fn disable(&self) -> Result<()> {
     self.0.disable()
   }
 
-  /// Returns whether the detour is enabled or not.
+  /// Returns whether the hook is enabled or not.
   pub fn is_enabled(&self) -> bool {
     self.0.is_enabled()
   }

@@ -1,5 +1,5 @@
 use crate::pic::{FixedThunk, Thunkable};
-use generic_array::{GenericArray, typenum};
+use generic_array::{typenum, GenericArray};
 use std::mem;
 
 use super::Register;
@@ -115,6 +115,14 @@ pub fn and_reg_i32(register: Register, imm: i32) -> Box<dyn Thunkable> {
   let mut bytes = vec![opcode, mod_r_m];
   bytes.extend_from_slice(&imm);
   Box::new(bytes)
+}
+
+pub fn pushfd() -> Box<dyn Thunkable> {
+  Box::new(vec![0x9C_u8])
+}
+
+pub fn popfd() -> Box<dyn Thunkable> {
+  Box::new(vec![0x9D_u8])
 }
 
 pub fn push_all_regs() -> Box<dyn Thunkable> {
