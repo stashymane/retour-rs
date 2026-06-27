@@ -41,7 +41,7 @@ mod tests {
 
   #[test]
   fn detour_relative_branch() -> Result<()> {
-    #[naked]
+    #[unsafe(naked)]
     unsafe extern "C" fn branch_ret5() -> i32 {
       naked_asm!(
         "
@@ -61,7 +61,7 @@ mod tests {
 
   #[test]
   fn detour_hotpatch() -> Result<()> {
-    #[naked]
+    #[unsafe(naked)]
     unsafe extern "C" fn hotpatch_ret0() -> i32 {
       naked_asm!(
         "
@@ -81,7 +81,7 @@ mod tests {
 
   #[test]
   fn detour_padding_after() -> Result<()> {
-    #[naked]
+    #[unsafe(naked)]
     unsafe extern "C" fn padding_after_ret0() -> i32 {
       naked_asm!(
         "
@@ -98,7 +98,7 @@ mod tests {
 
   #[test]
   fn detour_external_loop() {
-    #[naked]
+    #[unsafe(naked)]
     unsafe extern "C" fn external_loop() -> i32 {
       naked_asm!(
         "
@@ -118,7 +118,7 @@ mod tests {
   #[test]
   #[cfg(target_arch = "x86_64")]
   fn detour_rip_relative_pos() -> Result<()> {
-    #[naked]
+    #[unsafe(naked)]
     unsafe extern "C" fn rip_relative_ret195() -> i32 {
       naked_asm!(
         "
@@ -137,7 +137,7 @@ mod tests {
   #[test]
   #[cfg(target_arch = "x86_64")]
   fn detour_rip_relative_neg() -> Result<()> {
-    #[naked]
+    #[unsafe(naked)]
     unsafe extern "C" fn rip_relative_prolog_ret49() -> i32 {
       naked_asm!(
         "
